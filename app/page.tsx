@@ -32,7 +32,7 @@ export default function HotTakesGenerator() {
   const [provider, setProvider] = useState("openai")
 
   const generateHotTakes = async () => {
-    if (!apiKey.trim()) {
+    if (provider !== "ollama" && !apiKey.trim()) {
       setError(`Please enter your ${provider.toUpperCase()} API key`)
       return
     }
@@ -136,19 +136,22 @@ export default function HotTakesGenerator() {
                   <SelectItem value="openai">OpenAI</SelectItem>
                   <SelectItem value="anthropic">Anthropic</SelectItem>
                   <SelectItem value="google">Google</SelectItem>
+                  <SelectItem value="ollama">Ollama (Local)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="api-key">API Key</Label>
-              <Input
-                id="api-key"
-                type="password"
-                placeholder={`Enter your ${provider.toUpperCase()} API key`}
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-              />
-            </div>
+            {provider !== "ollama" && (
+              <div className="space-y-2">
+                <Label htmlFor="api-key">API Key</Label>
+                <Input
+                  id="api-key"
+                  type="password"
+                  placeholder={`Enter your ${provider.toUpperCase()} API key`}
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                />
+              </div>
+            )}
           </CardContent>
         </Card>
 
