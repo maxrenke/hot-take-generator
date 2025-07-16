@@ -1,21 +1,45 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { generateText } from "ai"
 import { createOpenAI } from "@ai-sdk/openai"
+import { createAnthropic } from "@ai-sdk/anthropic"
+import { createGoogleGenerativeAI } from "@ai-sdk/google"
 
 export async function POST(req: NextRequest) {
   try {
-    const { apiKey, thoughts } = await req.json()
+    const { apiKey, thoughts, provider } = await req.json()
 
-    if (!apiKey || !thoughts) {
-      return NextResponse.json({ error: "API key and thoughts are required" }, { status: 400 })
+    if (!apiKey || !thoughts || !provider) {
+      return NextResponse.json(
+        { error: "API key, thoughts, and provider are required" },
+        { status: 400 }
+      )
     }
 
-    const openai = createOpenAI({
-      apiKey: apiKey,
-    })
+    let aiProvider
+    let model
+
+    switch (provider) {
+      case "openai":
+        aiProvider = createOpenAI({ apiKey })
+        model = aiProvider("gpt-4o-mini")
+        break
+      case "anthropic":
+        aiProvider = createAnthropic({ apiKey })
+        model = aiProvider("claude-4-sonnet-20250514")
+        break
+      case "google":
+        aiProvider = createGoogleGenerativeAI({ apiKey })
+        model = aiProvider("models/gemini-2.5-flash")
+        break
+      default:
+        return NextResponse.json(
+          { error: "Unsupported provider" },
+          { status: 400 }
+        )
+    }
 
     const { text } = await generateText({
-      model: openai("gpt-4o-mini"),
+      model: model,
       prompt: `Transform the following thoughts into 3-5 concise, sharp "hot takes" - bold, controversial, or provocative statements that capture the essence of the original thoughts. Each hot take should be:
       - One sentence long
       - Direct and punchy
@@ -37,6 +61,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ hotTakes })
   } catch (error) {
     console.error("Error generating hot takes:", error)
-    return NextResponse.json({ error: "Failed to generate hot takes" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Failed to generate hot takes" },
+      { status: 500 }
+    )
   }
 }
