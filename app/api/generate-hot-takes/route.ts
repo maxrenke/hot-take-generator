@@ -3,33 +3,54 @@ import { generateText } from "ai"
 import { createOpenAI } from "@ai-sdk/openai"
 import { createAnthropic } from "@ai-sdk/anthropic"
 import { createGoogleGenerativeAI } from "@ai-sdk/google"
+import { ollama } from "ollama-ai-provider"
 
 export async function POST(req: NextRequest) {
   try {
     const { apiKey, thoughts, provider } = await req.json()
 
-    if (!apiKey || !thoughts || !provider) {
+    if (!thoughts || !provider) {
       return NextResponse.json(
-        { error: "API key, thoughts, and provider are required" },
+        { error: "Thoughts and provider are required" },
         { status: 400 }
       )
     }
 
-    let aiProvider
     let model
 
     switch (provider) {
       case "openai":
-        aiProvider = createOpenAI({ apiKey })
-        model = aiProvider("gpt-4o-mini")
+        if (!apiKey) {
+          return NextResponse.json(
+            { error: "API key is required for OpenAI" },
+            { status: 400 }
+          )
+        }
+        const openai = createOpenAI({ apiKey })
+        model = openai("gpt-4o-mini")
         break
       case "anthropic":
-        aiProvider = createAnthropic({ apiKey })
-        model = aiProvider("claude-4-sonnet-20250514")
+        if (!apiKey) {
+          return NextResponse.json(
+            { error: "API key is required for Anthropic" },
+            { status: 400 }
+          )
+        }
+        const anthropic = createAnthropic({ apiKey })
+        model = anthropic("claude-3-haiku-20240307")
         break
       case "google":
-        aiProvider = createGoogleGenerativeAI({ apiKey })
-        model = aiProvider("models/gemini-2.5-flash")
+        if (!apiKey) {
+          return NextResponse.json(
+            { error: "API key is required for Google" },
+            { status: 400 }
+          )
+        }
+        const google = createGoogleGenerativeAI({ apiKey })
+        model = google("models/gemini-1.5-flash")
+        break
+      case "ollama":
+        model = ollama("llama3")
         break
       default:
         return NextResponse.json(
@@ -48,7 +69,7 @@ export async function POST(req: NextRequest) {
       
       Original thoughts: "${thoughts}"
       
-      Format your response as a numbered list of hot takes, one per line.`,
+      Format your response as a numbered list of hot takes, one per line.`
     })
 
     // Parse the response to extract individual hot takes
